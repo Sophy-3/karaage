@@ -1,46 +1,255 @@
 # 進め方
 
-## 第1段階
-唐揚げ図鑑を見る
-検索する
 
-DBなし（SQLite）
+PostgreSQL経験があるなら、**「見る」「検索する」だけなら1〜2時間で動くレベル**です。
 
-例えば
-- グルクン唐揚げ
-- フグ唐揚げ
-- ごぼう唐揚げ
-を登録して表示するだけ。
+## 作るもの
 
+画面
 
+```text
+からあげ図鑑
 
-## 第2段階
-食べた記録を付ける
+検索: [グルクン      ]
 
-Supabase導入
+-----------------
+グルクン唐揚げ
+食材: 魚
 
+フグ唐揚げ
+食材: 魚
+-----------------
+```
 
-フロント　Streamlit
-バックエンド　Supabase
+構成
 
-構成イメージ
-
-ユーザー
-   ↓
-アプリ
+```text
+Streamlit
    ↓
 Supabase
+```
 
-- 図鑑
-- ユーザー
-- コレクション
-- 写真
+---
 
-[Supabase](:https://supabase.com/?utm_source)なら
-- データベース
-- ログイン
-- 写真保存
-が最初から付いています。
+# ① Supabaseアカウント作成
+
+[Supabase](https://supabase.com?utm_source=chatgpt.com)
+
+* GitHubでログイン
+* New Project
+* Project Name
+
+例
+
+```text
+karaage-zukan
+```
+
+* パスワード設定
+
+作成完了まで数分待つ
+
+---
+
+# ② テーブル作成
+
+左メニュー
+
+```text
+Table Editor
+```
+
+↓
+
+```text
+Create a new table
+```
+
+テーブル名
+
+```text
+karaage
+```
+
+カラム
+
+| 項目          | 型    |
+| ----------- | ---- |
+| id          | int8 |
+| name        | text |
+| ingredient  | text |
+| description | text |
+
+idは
+
+```text
+Primary Key
+Identity
+```
+
+にする
+
+---
+
+# ③ サンプルデータ投入
+
+SQL Editor
+
+```sql
+insert into karaage
+(name, ingredient, description)
+values
+('グルクン唐揚げ', '魚', '沖縄の定番'),
+('フグ唐揚げ', '魚', '山口名物'),
+('ごぼう唐揚げ', '野菜', '居酒屋で人気');
+```
+
+実行
+
+---
+
+# ④ APIキー取得
+
+左下
+
+```text
+Settings
+```
+
+↓
+
+```text
+API
+```
+
+取得するもの
+
+```text
+Project URL
+anon public key
+```
+
+例
+
+```text
+https://xxxxx.supabase.co
+
+eyJhb...
+```
+
+---
+
+# ⑤ Streamlit準備
+
+インストール
+
+```bash
+pip install streamlit
+pip install supabase
+```
+
+---
+
+# ⑥ app.py作成
+
+```python
+import streamlit as st
+from supabase import create_client
+
+url = "SupabaseのURL"
+key = "anon key"
+
+supabase = create_client(url, key)
+
+st.title("からあげ図鑑")
+
+keyword = st.text_input("検索")
+
+query = supabase.table("karaage").select("*")
+
+if keyword:
+    query = query.ilike("name", f"%{keyword}%")
+
+result = query.execute()
+
+for item in result.data:
+    st.subheader(item["name"])
+    st.write(f"食材: {item['ingredient']}")
+    st.write(item["description"])
+    st.divider()
+```
+
+---
+
+# ⑦ 実行
+
+```bash
+streamlit run app.py
+```
+
+ブラウザで表示
+
+---
+
+# ⑧ 画像
+
+次に追加したくなったら
+
+Supabase Storageを使う
+
+```text
+karaage/
+ ├ グルクン.jpg
+ ├ フグ.jpg
+```
+
+みたいに保存できます。
+
+---
+
+# MVP完成
+
+この時点で
+
+✅ Supabase接続
+
+✅ 一覧表示
+
+✅ 名前検索
+
+ができています。
+
+---
+
+さらに、からあげ図鑑向けなら最初からテーブルを少しだけ拡張しておくと後が楽です。
+
+```sql
+create table karaage (
+    id bigint generated always as identity primary key,
+    name text not null,
+    ingredient text not null,
+    category text,
+    region text,
+    description text
+);
+```
+
+例えば
+
+| name    | ingredient | category | region |
+| ------- | ---------- | -------- | ------ |
+| グルクン唐揚げ | 魚          | 海水魚      | 沖縄     |
+| フグ唐揚げ   | 魚          | 海水魚      | 山口     |
+| ごぼう唐揚げ  | 野菜         | 根菜       | 全国     |
+
+としておくと、将来
+
+* 魚だけ表示
+* 沖縄だけ表示
+* 野菜だけ表示
+
+の絞り込みが簡単になります。まずはここまで作れば、「からあげ図鑑」の第一歩として十分です。
+
 
 
 ## 第3段階
