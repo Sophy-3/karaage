@@ -12,6 +12,11 @@ st.session_state.setdefault("karaage_rows", None)
 st.session_state.setdefault("karaage_count", 0)
 
 with st.container(horizontal_alignment="center"):
+    st.badge(
+        "今日はどのからあげをコレクションする？",
+        icon=":material/restaurant:",
+        color="orange",
+    )
     st.title("からあげ図鑑", text_alignment="center")
     st.caption("お気に入りのからあげに出会うための、とっておきの図鑑", text_alignment="center")
 
